@@ -3,6 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+import fs from "fs";
 import express from "express";
 import path from "path";
 import crypto from "crypto";
@@ -86,7 +87,17 @@ let localAppSettings: any = {
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT || 3000;
+
+  if (process.env.NODE_ENV === "production") {
+    const distPath = path.join(process.cwd(), 'dist');
+    const serverCjsPath = path.join(distPath, 'server.cjs');
+    
+    if (!fs.existsSync(distPath) || !fs.existsSync(serverCjsPath)) {
+      console.error("Error: Missing dist folder or server.cjs. Ensure the build completed successfully.");
+      process.exit(1);
+    }
+  }
 
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -1933,8 +1944,10 @@ async function processTransactionSafe(orderId, isSuccess, method, amount) {
 
   }
 
-  app.listen(Number(PORT), "0.0.0.0", () => {
-    console.log(`Server launched successfully. Port bound: http://localhost:${PORT}`);
+  const listenPort = process.env.DEFAULT_APP_PORT || PORT;
+
+  app.listen(Number(listenPort), "0.0.0.0", () => {
+    console.log(`Server successfully started at http://localhost:3000`);
   });
 
 }
